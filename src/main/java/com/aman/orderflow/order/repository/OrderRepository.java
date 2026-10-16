@@ -1,0 +1,13 @@
+package com.aman.orderflow.order.repository;
+
+import com.aman.orderflow.order.domain.Order;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface OrderRepository extends JpaRepository<Order, Long> {
+
+    Page<Order> findByUserId(Long userId, Pageable pageable);
+
+    Page<Order> findByCustomerEmail(String customerEmail, Pageable pageable);
+}

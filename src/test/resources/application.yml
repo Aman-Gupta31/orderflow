@@ -1,0 +1,11 @@
+# Test-fixture values only - never used outside the test JVM, never deployed.
+# This file lives under src/test/resources, so it is never packaged into the
+# application jar; production/dev config must still set JWT_SECRET explicitly
+# (see src/main/resources/application.yml).
+app:
+  jwt:
+    secret: Hx3XtlETJ6iYRnNq5uIsNDp6DzxGDPY+ulCUmb+2W5qHNiMqSye+j7Y5IQZvt7g0onUiAj7sjZ/tnKgwoHanNw==
+    expiration-seconds: 3600
+  security:
+    seed-admin:
+      enabled: false

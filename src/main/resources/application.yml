@@ -1,0 +1,78 @@
+spring:
+  application:
+    name: orderflow
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:orderflow}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USERNAME:orderflow}
+    password: ${DB_PASSWORD:orderflow}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # Lettuce's own default command timeout is 60s with background reconnect
+      # retries in between - that turned a Redis outage into a ~120s hang per
+      # request during this project's own live verification (found and fixed;
+      # see docs/learning-guide/06-redis-caching.md). A short, explicit timeout
+      # here is what actually makes "fall through to the database" fast instead
+      # of just eventual.
+      timeout: 1s
+      connect-timeout: 1s
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      group-id: orderflow-audit
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  health:
+    # Redis backs an optional cache-aside layer here, not a critical dependency -
+    # the app is designed (see LoggingCacheErrorHandler) to keep serving correct
+    # responses, just without the speed-up, when Redis is unreachable. Letting a
+    # Redis outage flip /actuator/health to DOWN would misrepresent that: the app
+    # is still genuinely able to serve traffic.
+    redis:
+      enabled: false
+
+app:
+  jwt:
+    # No default on purpose - startup fails loudly if JWT_SECRET isn't set, rather
+    # than silently signing tokens with an insecure committed value. Generate one
+    # with: openssl rand -base64 64
+    secret: ${JWT_SECRET}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
+  security:
+    seed-admin:
+      enabled: ${SEED_ADMIN:true}
+  cache:
+    product-ttl-seconds: ${PRODUCT_CACHE_TTL_SECONDS:300}
+  outbox:
+    poll-interval-ms: ${OUTBOX_POLL_INTERVAL_MS:2000}
+
+logging:
+  level:
+    com.aman.orderflow: INFO
